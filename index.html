@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球旅行险投保平台 | InsureMO</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 进度指示器 -->
+    <div class="progress-bar">
+        <div class="progress-step active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-label">填写信息</div>
+        </div>
+        <div class="progress-step" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-label">选择方案</div>
+        </div>
+        <div class="progress-step" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-label">报价确认</div>
+        </div>
+        <div class="progress-step" data-step="4">
+            <div class="step-number">4</div>
+            <div class="step-label">支付投保</div>
+        </div>
+        <div class="progress-step" data-step="5">
+            <div class="step-number">5</div>
+            <div class="step-label">完成出单</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">✈️</span>
+                <h1>全球旅行险投保平台</h1>
+            </div>
+            <p class="subtitle">为您提供全方位的旅行保障</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Step 1: 填写投保信息 -->
+            <section id="step1" class="step active">
+                <h2>📝 填写投保信息</h2>
+                <form id="insuranceForm">
+                    <div class="form-section">
+                        <h3>保障期间</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="effectiveDate">生效日期 <span class="required">*</span></label>
+                                <input type="date" id="effectiveDate" name="EffectiveDate" required>
+                                <span class="error-message"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="expiryDate">失效日期 <span class="required">*</span></label>
+                                <input type="date" id="expiryDate" name="ExpiryDate" required>
+                                <span class="error-message"></span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="travelType">旅行类型 <span class="required">*</span></label>
+                                <select id="travelType" name="TravelType" required>
+                                    <option value="">请选择</option>
+                                    <option value="1">单次旅行</option>
+                                    <option value="2">多次旅行</option>
+                                </select>
+                                <span class="error-message"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="tripType">行程类型 <span class="required">*</span></label>
+                                <select id="tripType" name="TripType" required>
+                                    <option value="">请选择</option>
+                                    <option value="1">商务</option>
+                                    <option value="2">休闲</option>
+                                    <option value="3">留学</option>
+                                </select>
+                                <span class="error-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>投保人信息</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="customerName">姓名 <span class="required">*</span></label>
+                                <input type="text" id="customerName" name="Customer.Name" required 
+                                       placeholder="请输入投保人姓名">
+                                <span class="error-message"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="gender">性别 <span class="required">*</span></label>
+                                <select id="gender" name="Customer.Gender" required>
+                                    <option value="">请选择</option>
+                                    <option value="M">男</option>
+                                    <option value="F">女</option>
+                                </select>
+                                <span class="error-message"></span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dateOfBirth">出生日期 <span class="required">*</span></label>
+                                <input type="date" id="dateOfBirth" name="Customer.DateOfBirth" required>
+                                <span class="error-message"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="insuredAge">年龄 <span class="required">*</span></label>
+                                <input type="number" id="insuredAge" name="Travelers[0].InsuredAge" 
+                                       required min="0" max="100" placeholder="年龄">
+                                <span class="error-message"></span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="email">电子邮箱</label>
+                                <input type="email" id="email" name="Customer.Email" 
+                                       placeholder="your@email.com">
+                                <span class="error-message"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="mobile">手机号码</label>
+                                <input type="tel" id="mobile" name="Customer.Mobile" 
+                                       placeholder="+86 138 0000 0000">
+                                <span class="error-message"></span>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="idNo">证件号码</label>
+                                <input type="text" id="idNo" name="Customer.IdNo" 
+                                       placeholder="护照或身份证号码">
+                                <span class="error-message"></span>
+                            </div>
+                            <div class="form-group">
+                                <label for="idType">证件类型</label>
+                                <select id="idType" name="Customer.IdType">
+                                    <option value="">请选择</option>
+                                    <option value="1">身份证</option>
+                                    <option value="2">护照</option>
+                                    <option value="3">其他</option>
+                                </select>
+                                <span class="error-message"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-primary">下一步：选择方案 →</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Step 2: 选择产品方案 -->
+            <section id="step2" class="step">
+                <h2>🎯 选择保障方案</h2>
+                <div id="plansContainer" class="plans-grid">
+                    <!-- 动态加载方案 -->
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="goToStep(1)">← 上一步</button>
+                    <button type="button" class="btn-primary" id="btnStep2Next" disabled>
+                        下一步：计算保费 →
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 3: 报价确认 -->
+            <section id="step3" class="step">
+                <h2>💰 报价确认</h2>
+                <div id="quotationSummary" class="quotation-summary">
+                    <!-- 动态加载报价信息 -->
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="goToStep(2)">← 上一步</button>
+                    <button type="button" class="btn-primary" onclick="confirmQuotation()">
+                        确认报价并投保 →
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 4: 支付投保 -->
+            <section id="step4" class="step">
+                <h2>💳 支付投保</h2>
+                <div class="payment-section">
+                    <div class="payment-info">
+                        <h3>支付信息</h3>
+                        <div id="paymentAmount" class="payment-amount">
+                            <!-- 显示支付金额 -->
+                        </div>
+                        <div class="payment-methods">
+                            <label class="payment-method">
+                                <input type="radio" name="paymentMethod" value="credit_card" checked>
+                                <span>信用卡支付</span>
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="paymentMethod" value="alipay">
+                                <span>支付宝</span>
+                            </label>
+                            <label class="payment-method">
+                                <input type="radio" name="paymentMethod" value="wechat">
+                                <span>微信支付</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" onclick="goToStep(3)">← 上一步</button>
+                        <button type="button" class="btn-primary" onclick="processPayment()">
+                            确认支付
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 5: 完成出单 -->
+            <section id="step5" class="step">
+                <div class="success-message">
+                    <div class="success-icon">✅</div>
+                    <h2>🎉 投保成功！</h2>
+                    <p>您的保单已成功签发</p>
+                    <div id="policyDetails" class="policy-details">
+                        <!-- 显示保单信息 -->
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-primary" onclick="downloadPolicy()">
+                            📄 下载保单
+                        </button>
+                        <button type="button" class="btn-secondary" onclick="startNew()">
+                            开始新的投保
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="spinner"></div>
+            <p>处理中，请稍候...</p>
+        </div>
+
+        <!-- Error Toast -->
+        <div id="errorToast" class="toast error">
+            <span class="toast-icon">❌</span>
+            <span class="toast-message"></span>
+        </div>
+
+        <!-- Success Toast -->
+        <div id="successToast" class="toast success">
+            <span class="toast-icon">✅</span>
+            <span class="toast-message"></span>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 InsureMO 全球旅行险投保平台 | Powered by InsureMO</p>
+    </footer>
+
+    <script src="config.js"></script>
+    <script src="api.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
