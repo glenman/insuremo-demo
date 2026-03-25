@@ -340,8 +340,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="proposalNo">保单号 / 提案号</label>
-                        <input type="text" id="proposalNo" placeholder="请输入保单号，如：PTRVL010000000279">
+                        <label for="proposalNo">投保单号</label>
+                        <input type="text" id="proposalNo" placeholder="请输入投保单号，如：PTRVL010000000279">
                     </div>
                     <button class="btn" onclick="queryPolicy()">查询保单</button>
                     
@@ -553,7 +553,7 @@
             const proposalNo = document.getElementById('proposalNo').value.trim();
 
             if (!proposalNo) {
-                alert('请输入保单号');
+                alert('请输入投保单号');
                 return;
             }
 
@@ -585,6 +585,55 @@
             }
         }
 
+        // 状态映射（英文 -> 中文）
+        function getStatusText(status) {
+            const statusMap = {
+                'ISSUED': '已签发',
+                'BOUND': '已绑定',
+                'QUOTATION': '报价中',
+                'CANCELLED': '已取消',
+                'EXPIRED': '已过期',
+                'PENDING': '待处理'
+            };
+            return statusMap[status] || status;
+        }
+
+        // 格式化日期（只显示年月日）
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            // 如果包含时间，只取日期部分
+            const date = dateStr.split('T')[0];
+            return date;
+        }
+
+        // 个人信息掩码
+        function maskInfo(str, type = 'id') {
+            if (!str) return '-';
+            
+            if (type === 'id') {
+                // 身份证：显示前3位和后4位
+                if (str.length > 7) {
+                    return str.substring(0, 3) + '****' + str.substring(str.length - 4);
+                }
+            } else if (type === 'phone') {
+                // 手机号：显示前3位和后4位
+                if (str.length > 7) {
+                    return str.substring(0, 3) + '****' + str.substring(str.length - 4);
+                }
+            } else if (type === 'email') {
+                // 邮箱：显示前2位和@后的域名
+                const parts = str.split('@');
+                if (parts.length === 2) {
+                    const name = parts[0];
+                    const domain = parts[1];
+                    const maskedName = name.substring(0, 2) + '***';
+                    return maskedName + '@' + domain;
+                }
+            }
+            
+            return str;
+        }
+
         // 格式化保单详情
         function formatPolicyDetails(policy) {
             const statusClass = {
@@ -593,39 +642,71 @@
                 'QUOTATION': 'status-quotation'
             }[policy.Status] || '';
 
+            // 获取产品名称
+            const productName = PRODUCT_INFO[policy.ProductCode]?.name || policy.ProductCode || '-';
+            
+            // 方案名称
+            const planName = policy.PlanName || '-';
+
             return `
                 <div class="policy-details">
                     <div class="detail-item">
+                        <div class="label">投保单号</div>
+                        <div class="value">${policy.ProposalNo || '-'}</div>
+                    </div>
+                    <div class="detail-item">
                         <div class="label">保单号</div>
-                        <div class="value">${policy.PolicyNo || policy.ProposalNo || '-'}</div>
+                        <div class="value" style="font-weight: 700; font-size: 1.2rem; color: #667eea;">${policy.PolicyNo || '-'}</div>
                     </div>
                     <div class="detail-item">
                         <div class="label">状态</div>
                         <div class="value">
-                            <span class="status-badge ${statusClass}">${policy.Status}</span>
+                            <span class="status-badge ${statusClass}">${getStatusText(policy.Status)}</span>
                         </div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="label">产品</div>
-                        <div class="value">${policy.PlanName || policy.ProductCode || '-'}</div>
                     </div>
                     <div class="detail-item">
                         <div class="label">保费</div>
                         <div class="value">${policy.TotalPremium || policy.Premium || 0} ${policy.Currency || 'EUR'}</div>
                     </div>
+                    <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="label">产品名称</div>
+                        <div class="value">${productName}</div>
+                    </div>
+                    <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="label">购买方案</div>
+                        <div class="value">${planName}</div>
+                    </div>
                     <div class="detail-item">
                         <div class="label">生效日期</div>
-                        <div class="value">${policy.EffectiveDate || '-'}</div>
+                        <div class="value">${formatDate(policy.EffectiveDate)}</div>
                     </div>
                     <div class="detail-item">
                         <div class="label">到期日期</div>
-                        <div class="value">${policy.ExpiryDate || '-'}</div>
+                        <div class="value">${formatDate(policy.ExpiryDate)}</div>
                     </div>
                     ${policy.Customer ? `
                     <div class="detail-item" style="grid-column: 1 / -1;">
-                        <div class="label">投保人</div>
+                        <div class="label">投保人姓名</div>
                         <div class="value">${policy.Customer.Name || '-'}</div>
                     </div>
+                    ${policy.Customer.IdNo ? `
+                    <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="label">身份证号</div>
+                        <div class="value">${maskInfo(policy.Customer.IdNo, 'id')}</div>
+                    </div>
+                    ` : ''}
+                    ${policy.Customer.Mobile ? `
+                    <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="label">联系电话</div>
+                        <div class="value">${maskInfo(policy.Customer.Mobile, 'phone')}</div>
+                    </div>
+                    ` : ''}
+                    ${policy.Customer.Email ? `
+                    <div class="detail-item" style="grid-column: 1 / -1;">
+                        <div class="label">电子邮箱</div>
+                        <div class="value">${maskInfo(policy.Customer.Email, 'email')}</div>
+                    </div>
+                    ` : ''}
                     ` : ''}
                 </div>
             `;
