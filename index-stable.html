@@ -566,13 +566,26 @@
             btn.textContent = '⏳ 计算中...';
 
             try {
+                // 构建完整的payload
                 const payload = {
-                    ...appState.formData,
-                    ProductId: appState.productId, // 明确添加ProductId
-                    PlanCode: appState.selectedPlan.PlanCode
+                    ProductId: CONFIG.PRODUCT_ID, // 直接使用CONFIG，确保存在
+                    ProductCode: 'TRVL01', // 添加ProductCode
+                    PlanCode: appState.selectedPlan.PlanCode,
+                    EffectiveDate: appState.formData.EffectiveDate,
+                    ExpiryDate: appState.formData.ExpiryDate,
+                    TravelType: appState.formData.TravelType,
+                    TripType: appState.formData.TripType,
+                    TravelPolicyType: appState.formData.TravelPolicyType,
+                    Customer: appState.formData.Customer,
+                    Travelers: appState.formData.Travelers
                 };
 
-                console.log('📤 计算保费请求:', payload);
+                console.log('📤 计算保费完整请求:');
+                console.log('  ProductId:', payload.ProductId);
+                console.log('  PlanCode:', payload.PlanCode);
+                console.log('  Customer:', payload.Customer);
+                console.log('  Travelers:', payload.Travelers);
+                console.log('  完整payload:', JSON.stringify(payload, null, 2));
 
                 const url = `${CONFIG.BASE_URL}/v1/flow/EUDemoTRVL01Calculate`;
                 const response = await fetch(url, {
@@ -584,14 +597,18 @@
                     body: JSON.stringify(payload)
                 });
 
+                console.log('✅ API响应状态:', response.status);
+
                 if (!response.ok) {
                     const errorText = await response.text();
+                    console.error('❌ API错误响应:', errorText);
                     throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
 
                 const result = await response.json();
 
                 if (!result.Success) {
+                    console.error('❌ API返回失败:', result);
                     throw new Error(result.Error?.Message || '计算失败');
                 }
 
