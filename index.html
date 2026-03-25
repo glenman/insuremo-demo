@@ -685,6 +685,39 @@
             return str;
         }
 
+        // 方案名称映射（根据 PlanCode 显示中文名称）
+        function getPlanName(policy) {
+            // 方案名称映射表
+            const planNameMap = {
+                // 旅行险方案
+                'TRVL0120200001': '旅行经典计划',
+                'TRVL01GOLD': '旅行黄金计划',
+                'TRVL01PLATINUM': '旅行白金计划',
+                // 家财险方案
+                'CIFHOME20220001': '白银计划',
+                'CIFHOME20220002': '黄金计划',
+                'CIFHOME20220003': '白金计划'
+            };
+            
+            // 优先使用 API 返回的 PlanName
+            if (policy.PlanName) {
+                return policy.PlanName;
+            }
+            
+            // 如果有 PlanCode，使用映射表
+            if (policy.PlanCode && planNameMap[policy.PlanCode]) {
+                return planNameMap[policy.PlanCode];
+            }
+            
+            // 如果有 Plan.PlanName
+            if (policy.Plan && policy.Plan.PlanName) {
+                return policy.Plan.PlanName;
+            }
+            
+            // 如果都没有，显示 PlanCode
+            return policy.PlanCode || '-';
+        }
+
         // 格式化保单详情
         function formatPolicyDetails(policy) {
             // 调试：打印保单数据
@@ -699,8 +732,8 @@
             // 获取产品名称
             const productName = PRODUCT_INFO[policy.ProductCode]?.name || policy.ProductCode || '-';
             
-            // 方案名称（尝试多个可能的字段）
-            const planName = policy.PlanName || policy.Plan?.PlanName || policy.PlanCode || '-';
+            // 获取方案名称
+            const planName = getPlanName(policy);
 
             return `
                 <div class="policy-details">
