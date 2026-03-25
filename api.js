@@ -20,7 +20,8 @@ class InsureMOAPI {
             headers: {
                 'Authorization': `Bearer ${this.token}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            mode: 'cors'
         };
 
         if (data && (method === 'POST' || method === 'PUT')) {
@@ -28,16 +29,37 @@ class InsureMOAPI {
         }
 
         try {
+            console.log(`📡 API Call: ${method} ${endpoint}`);
+            
             const response = await fetch(url, options);
+            
+            console.log(`✅ Response Status: ${response.status}`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('❌ API Error Response:', errorText);
+                throw new Error(`HTTP ${response.status}: ${errorText}`);
+            }
+
             const result = await response.json();
+            console.log('📦 API Response:', result);
 
             if (!result.Success) {
-                throw new Error(result.Error?.Message || 'API call failed');
+                const errorMsg = result.Error?.Message || result.message || 'API call failed';
+                throw new Error(errorMsg);
             }
 
             return result.Data;
         } catch (error) {
-            console.error('API Error:', error);
+            console.error('❌ API Error:', error);
+            
+            // 提供更友好的错误信息
+            if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                throw new Error('网络连接失败，请检查网络或API服务是否可用');
+            } else if (error.message.includes('CORS')) {
+                throw new Error('跨域请求被阻止，请联系管理员配置CORS');
+            }
+            
             throw error;
         }
     }

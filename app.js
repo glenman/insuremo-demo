@@ -258,11 +258,52 @@ async function loadPlans() {
     showLoading(true);
 
     try {
+        console.log('🚀 开始加载产品方案...');
         const result = await api.getPlanList(CONFIG.PRODUCT.ID);
+        
+        console.log('✅ 方案数据:', result);
+        
+        if (!result || !result.Plans || result.Plans.length === 0) {
+            throw new Error('未找到可用的保障方案');
+        }
+
         renderPlans(result.Plans);
-        showSuccess('方案列表加载成功');
+        showSuccess(`成功加载 ${result.Plans.length} 个保障方案`);
     } catch (error) {
-        showError('加载方案失败: ' + error.message);
+        console.error('❌ 加载方案失败:', error);
+        
+        let errorMessage = '加载方案失败';
+        
+        if (error.message.includes('网络连接失败')) {
+            errorMessage = '无法连接到服务器，请检查网络连接';
+        } else if (error.message.includes('CORS')) {
+            errorMessage = '跨域请求被阻止，请访问 <a href="test-api.html" target="_blank">API测试页面</a> 检查连接';
+        } else if (error.message.includes('HTTP 401') || error.message.includes('HTTP 403')) {
+            errorMessage = '认证失败，请检查 Auth Token 是否有效';
+        } else {
+            errorMessage = `加载失败: ${error.message}`;
+        }
+        
+        showError(errorMessage);
+        
+        // 显示错误提示和测试链接
+        const container = document.getElementById('plansContainer');
+        container.innerHTML = `
+            <div style="text-align: center; padding: 3rem; color: var(--error-color);">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
+                <h3>无法加载保障方案</h3>
+                <p style="color: var(--text-secondary); margin: 1rem 0;">
+                    ${error.message}
+                </p>
+                <p style="color: var(--text-secondary); margin: 1rem 0; font-size: 0.875rem;">
+                    请访问 <a href="test-api.html" target="_blank" style="color: var(--primary-color);">API 测试页面</a> 
+                    检查 API 连接状态
+                </p>
+                <button class="btn-primary" onclick="loadPlans()" style="margin-top: 1rem;">
+                    🔄 重新加载
+                </button>
+            </div>
+        `;
     } finally {
         showLoading(false);
     }
