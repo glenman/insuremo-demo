@@ -20,7 +20,7 @@
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
             background: rgba(26, 26, 46, 0.8);
             backdrop-filter: blur(10px);
@@ -219,12 +219,28 @@
             color: #666;
         }
 
-        /* 方案卡片 */
+        input:read-only {
+            cursor: not-allowed;
+        }
+
+        /* 方案卡片 - 3列布局 */
         .plans-container {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-top: 20px;
+        }
+
+        @media (max-width: 1200px) {
+            .plans-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .plans-container {
+                grid-template-columns: 1fr;
+            }
         }
 
         .plan-card {
@@ -249,6 +265,23 @@
             box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
         }
 
+        .plan-card.has-warning {
+            border-color: #f59e0b;
+        }
+
+        .plan-card.has-warning::before {
+            content: '⚠️ 测试中';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(245, 158, 11, 0.2);
+            color: #f59e0b;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
         .plan-card h3 {
             font-size: 1.5rem;
             margin-bottom: 10px;
@@ -266,6 +299,8 @@
             margin-top: 15px;
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             padding-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
         }
 
         .coverage-item {
@@ -376,6 +411,44 @@
             border-bottom: none;
         }
 
+        /* 支付方式 */
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .payment-option {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .payment-option:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .payment-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .payment-option .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .payment-option .name {
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
         /* 错误提示 */
         .error-message {
             background: rgba(239, 68, 68, 0.1);
@@ -446,29 +519,6 @@
         .log-info { color: #667eea; }
         .log-warn { color: #f59e0b; }
 
-        /* 产品信息展示 */
-        .product-info {
-            background: rgba(102, 126, 234, 0.1);
-            border: 2px solid rgba(102, 126, 234, 0.3);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .product-info .label {
-            color: #888;
-            font-size: 0.9rem;
-        }
-
-        .product-info .value {
-            color: #667eea;
-            font-weight: 600;
-            font-size: 1.1rem;
-        }
-
         /* 响应式 */
         @media (max-width: 768px) {
             .container {
@@ -496,10 +546,6 @@
             .button-group {
                 flex-direction: column;
             }
-
-            .plans-container {
-                grid-template-columns: 1fr;
-            }
         }
     </style>
 </head>
@@ -509,6 +555,7 @@
         <div class="loading-content">
             <div class="spinner"></div>
             <div id="loadingText">正在加载...</div>
+            <div id="retryText" style="margin-top: 10px; font-size: 0.9rem; color: #888;"></div>
         </div>
     </div>
 
@@ -528,10 +575,14 @@
             </div>
             <div class="step-item" data-step="3">
                 <div class="step-circle">3</div>
-                <div class="step-label">确认并支付</div>
+                <div class="step-label">确认报价</div>
             </div>
             <div class="step-item" data-step="4">
                 <div class="step-circle">4</div>
+                <div class="step-label">选择支付</div>
+            </div>
+            <div class="step-item" data-step="5">
+                <div class="step-circle">5</div>
                 <div class="step-label">完成</div>
             </div>
         </div>
@@ -540,18 +591,6 @@
         <div class="step-container active" id="step1">
             <div class="form-section">
                 <h3>📋 投保信息</h3>
-                
-                <!-- 产品信息 -->
-                <div class="product-info">
-                    <div>
-                        <span class="label">产品名称:</span>
-                        <span class="value" id="productName">加载中...</span>
-                    </div>
-                    <div>
-                        <span class="label">产品ID:</span>
-                        <span class="value" id="productId">-</span>
-                    </div>
-                </div>
 
                 <!-- 旅行信息 -->
                 <h4 style="margin-bottom: 15px; color: #888;">旅行信息</h4>
@@ -600,7 +639,21 @@
                 <div class="form-row">
                     <div class="form-group">
                         <label>出生日期<span class="required">*</span></label>
-                        <input type="date" id="dateOfBirth" required>
+                        <input type="date" id="dateOfBirth" required onchange="updateAge()">
+                    </div>
+                    <div class="form-group">
+                        <label>年龄</label>
+                        <input type="text" id="age" readonly placeholder="自动计算" style="background: rgba(102, 126, 234, 0.1); color: #667eea; font-weight: 600;">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>证件类型<span class="required">*</span></label>
+                        <select id="idType" required>
+                            <option value="1">身份证</option>
+                            <option value="2">护照</option>
+                            <option value="3">其他</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label>证件号码<span class="required">*</span></label>
@@ -652,7 +705,7 @@
             </div>
         </div>
 
-        <!-- 步骤3: 确认并支付 -->
+        <!-- 步骤3: 确认报价 -->
         <div class="step-container" id="step3">
             <div class="form-section">
                 <h3>📄 确认投保信息</h3>
@@ -693,14 +746,48 @@
                     上一步
                 </button>
                 <button class="btn btn-primary" id="btnStep3" onclick="submitStep3()">
-                    确认投保并支付
+                    确认投保
                     <span>→</span>
                 </button>
             </div>
         </div>
 
-        <!-- 步骤4: 完成 -->
+        <!-- 步骤4: 选择支付 -->
         <div class="step-container" id="step4">
+            <div class="form-section">
+                <h3>💳 选择支付方式</h3>
+                <p style="color: #888; margin-bottom: 20px;">请选择支付方式完成投保</p>
+                
+                <div class="payment-methods">
+                    <div class="payment-option" onclick="selectPayment(this, 'alipay')">
+                        <div class="icon">💳</div>
+                        <div class="name">支付宝</div>
+                    </div>
+                    <div class="payment-option" onclick="selectPayment(this, 'wechat')">
+                        <div class="icon">💰</div>
+                        <div class="name">微信支付</div>
+                    </div>
+                    <div class="payment-option" onclick="selectPayment(this, 'credit')">
+                        <div class="icon">💎</div>
+                        <div class="name">信用卡</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-secondary" onclick="goToStep(3)">
+                    <span>←</span>
+                    上一步
+                </button>
+                <button class="btn btn-primary" id="btnStep4" onclick="submitStep4()" disabled>
+                    确认支付
+                    <span>→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 步骤5: 完成 -->
+        <div class="step-container" id="step5">
             <div class="success-page">
                 <div class="success-icon">🎉</div>
                 <h2 style="font-size: 2rem; margin-bottom: 20px;">投保成功！</h2>
@@ -737,26 +824,28 @@
         const CONFIG = {
             BASE_URL: 'https://portal-gw.insuremo.com/platform/api-orchestration-test',
             AUTH_TOKEN: 'MOATbWg4aRISAep86MorzeBulKla18sq',
-            MAX_RETRIES: 3,
-            RETRY_DELAY: 1000,
-            TIMEOUT: 30000
+            MAX_RETRIES: 10,        // 增加到10次
+            RETRY_DELAY: 2000,      // 增加到2秒
+            TIMEOUT: 60000          // 增加到60秒
         };
 
         // 全局状态
         const appState = {
             currentStep: 1,
-            productId: 375604942, // TRVL01
+            productId: 375604942,
             productCode: 'TRVL01',
             formData: {},
             selectedPlan: null,
             calculationResult: null,
             proposalNo: null,
-            policyNo: null
+            policyNo: null,
+            paymentMethod: null
         };
 
         // 显示加载遮罩
-        function showLoading(text = '正在加载...') {
+        function showLoading(text = '正在加载...', retryText = '') {
             document.getElementById('loadingText').textContent = text;
+            document.getElementById('retryText').textContent = retryText;
             document.getElementById('loadingOverlay').style.display = 'flex';
         }
 
@@ -782,6 +871,27 @@
         // 延迟函数
         function delay(ms) {
             return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // 更新年龄
+        function updateAge() {
+            const birthDate = document.getElementById('dateOfBirth').value;
+            if (birthDate) {
+                const age = calculateAge(birthDate);
+                document.getElementById('age').value = age + ' 岁';
+            }
+        }
+
+        // 计算年龄
+        function calculateAge(birthDate) {
+            const today = new Date();
+            const birth = new Date(birthDate);
+            let age = today.getFullYear() - birth.getFullYear();
+            const monthDiff = today.getMonth() - birth.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                age--;
+            }
+            return age;
         }
 
         // API调用（带重试和超时）
@@ -822,8 +932,17 @@
             } catch (error) {
                 clearTimeout(timeoutId);
                 
+                // 更新加载提示
+                if (retryCount < CONFIG.MAX_RETRIES) {
+                    const nextRetry = retryCount + 1;
+                    showLoading(
+                        '正在加载...', 
+                        `遇到错误，${CONFIG.RETRY_DELAY/1000}秒后进行第${nextRetry}次重试（共${CONFIG.MAX_RETRIES}次）`
+                    );
+                }
+                
                 // 超时或网络错误时重试
-                if ((error.name === 'AbortError' || error.message.includes('network')) && retryCount < CONFIG.MAX_RETRIES) {
+                if ((error.name === 'AbortError' || error.message.includes('network') || error.message.includes('fetch')) && retryCount < CONFIG.MAX_RETRIES) {
                     log(`⚠️ ${error.message}，${CONFIG.RETRY_DELAY/1000}秒后重试...`, 'warn');
                     await delay(CONFIG.RETRY_DELAY);
                     return callAPI(endpoint, method, data, retryCount + 1);
@@ -834,23 +953,20 @@
             }
         }
 
-        // 页面初始化（带重试）
+        // 页面初始化
         async function init() {
             showLoading('正在加载产品信息...');
             
             try {
                 log('=== 页面初始化 ===', 'info');
 
-                // 获取产品列表（带重试）
+                // 获取产品列表
                 log('Step 1: 获取产品列表', 'info');
                 const products = await callAPI('/v1/flow/EUDemoProductList');
                 
-                // 找到TRVL01产品
                 const trvlProduct = products.Products.find(p => p.ProductCode === 'TRVL01');
                 if (trvlProduct) {
                     appState.productId = trvlProduct.ProductId;
-                    document.getElementById('productName').textContent = trvlProduct.ProductName;
-                    document.getElementById('productId').textContent = trvlProduct.ProductId;
                     log(`✅ 已选择产品: ${trvlProduct.ProductName} (ID: ${trvlProduct.ProductId})`, 'success');
                 }
 
@@ -865,32 +981,12 @@
             } catch (error) {
                 log(`❌ 初始化失败: ${error.message}`, 'error');
                 hideLoading();
-                
-                // 显示错误和重试按钮
-                document.getElementById('productName').textContent = '加载失败';
-                document.getElementById('productId').textContent = '点击重试';
-                document.getElementById('productId').style.cursor = 'pointer';
-                document.getElementById('productId').onclick = init;
-                
-                alert('页面初始化失败，请点击产品ID重试\n\n错误: ' + error.message);
+                alert('页面初始化失败，请刷新页面重试\n\n错误: ' + error.message);
             }
-        }
-
-        // 计算年龄
-        function calculateAge(birthDate) {
-            const today = new Date();
-            const birth = new Date(birthDate);
-            let age = today.getFullYear() - birth.getFullYear();
-            const monthDiff = today.getMonth() - birth.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-                age--;
-            }
-            return age;
         }
 
         // 步骤切换
         function goToStep(step) {
-            // 更新进度条
             document.querySelectorAll('.step-item').forEach(item => {
                 const itemStep = parseInt(item.dataset.step);
                 item.classList.remove('active', 'completed');
@@ -901,7 +997,6 @@
                 }
             });
 
-            // 显示对应步骤
             document.querySelectorAll('.step-container').forEach(container => {
                 container.classList.remove('active');
             });
@@ -917,7 +1012,6 @@
             btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;"></span> 加载中...';
             
             try {
-                // 收集表单数据
                 appState.formData = {
                     ProductId: appState.productId,
                     EffectiveDate: document.getElementById('effectiveDate').value,
@@ -930,6 +1024,7 @@
                         Gender: document.getElementById('gender').value,
                         DateOfBirth: document.getElementById('dateOfBirth').value,
                         IdNo: document.getElementById('idNo').value,
+                        IdType: document.getElementById('idType').value,
                         Email: document.getElementById('email').value || undefined,
                         Mobile: document.getElementById('mobile').value || undefined
                     },
@@ -942,27 +1037,24 @@
 
                 log('📝 表单数据已收集', 'info');
 
-                // 获取方案列表
                 goToStep(2);
                 showLoading('正在加载保障方案...');
                 log('Step 2: 获取保险方案', 'info');
 
                 const plans = await callAPI(`/v1/flow/EUDemoPlanList?productId=${appState.productId}`);
 
-                // 显示方案
                 const container = document.getElementById('plansContainer');
                 container.innerHTML = '';
 
                 plans.Plans.forEach(plan => {
-                    // 只显示可用的方案（TRVL01PLATINUM有问题）
-                    if (plan.PlanCode === 'TRVL01PLATINUM') {
-                        return;
-                    }
-
                     const card = document.createElement('div');
                     card.className = 'plan-card';
                     
-                    // 生成保障项目列表
+                    // TRVL01PLATINUM添加警告
+                    if (plan.PlanCode === 'TRVL01PLATINUM') {
+                        card.classList.add('has-warning');
+                    }
+                    
                     let coveragesHtml = '';
                     if (plan.Coverages && plan.Coverages.length > 0) {
                         coveragesHtml = plan.Coverages.map(c => `
@@ -1032,7 +1124,6 @@
             btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;"></span> 计算中...';
 
             try {
-                // 计算保费
                 showLoading('正在计算保费...');
                 log('Step 3: 计算保费', 'info');
 
@@ -1043,7 +1134,6 @@
                     PlanCode: appState.selectedPlan.PlanCode
                 };
 
-                // 验证ProductId
                 if (!payload.ProductId || isNaN(payload.ProductId)) {
                     throw new Error('ProductId无效: ' + payload.ProductId);
                 }
@@ -1054,7 +1144,6 @@
 
                 log(`✅ 保费计算成功: ${appState.calculationResult.TotalPremium} ${appState.calculationResult.Currency}`, 'success');
 
-                // 显示报价
                 hideLoading();
                 goToStep(3);
                 renderQuotation();
@@ -1073,7 +1162,6 @@
         function renderQuotation() {
             const data = appState.calculationResult;
 
-            // 显示保费
             document.getElementById('premiumAmount').textContent = 
                 `${data.Currency === 'EUR' ? '€' : '$'}${data.TotalPremium}`;
             document.getElementById('basePremium').textContent = 
@@ -1081,7 +1169,6 @@
             document.getElementById('tax').textContent = 
                 `${data.Currency === 'EUR' ? '€' : '$'}${data.Tax || 0}`;
 
-            // 显示摘要
             document.getElementById('summaryPlanName').textContent = data.PlanName;
             document.getElementById('summaryPeriod').textContent = 
                 `${data.EffectiveDate} 至 ${data.ExpiryDate}`;
@@ -1090,7 +1177,7 @@
                 `${data.Coverages?.length || 0} 项保障`;
         }
 
-        // Step 3: 确认并支付
+        // Step 3: 确认投保
         async function submitStep3() {
             const btn = document.getElementById('btnStep3');
             btn.disabled = true;
@@ -1099,7 +1186,6 @@
             try {
                 showLoading('正在保存投保信息...');
                 
-                // 保存提案
                 log('Step 4: 保存提案', 'info');
 
                 const savePayload = {
@@ -1112,7 +1198,6 @@
 
                 log(`✅ 提案号: ${appState.proposalNo}`, 'success');
 
-                // 绑定提案
                 showLoading('正在绑定投保单...');
                 log('Step 5: 绑定提案', 'info');
 
@@ -1122,7 +1207,40 @@
 
                 log(`✅ 提案已绑定`, 'success');
 
-                // 支付回调
+                hideLoading();
+                goToStep(4);
+
+            } catch (error) {
+                log(`❌ 失败: ${error.message}`, 'error');
+                hideLoading();
+                alert('操作失败: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '确认投保 <span>→</span>';
+            }
+        }
+
+        // 选择支付方式
+        function selectPayment(element, method) {
+            document.querySelectorAll('.payment-option').forEach(opt => opt.classList.remove('selected'));
+            element.classList.add('selected');
+            appState.paymentMethod = method;
+            document.getElementById('btnStep4').disabled = false;
+            log(`✅ 已选择支付方式: ${method}`, 'success');
+        }
+
+        // Step 4: 确认支付
+        async function submitStep4() {
+            if (!appState.paymentMethod) {
+                alert('请选择支付方式');
+                return;
+            }
+
+            const btn = document.getElementById('btnStep4');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner" style="width:20px;height:20px;border-width:2px;"></span> 支付中...';
+
+            try {
                 showLoading('正在处理支付...');
                 log('Step 6: 支付回调', 'info');
 
@@ -1136,18 +1254,17 @@
 
                 log(`✅ 保单号: ${appState.policyNo}`, 'success');
 
-                // 显示成功页面
                 hideLoading();
-                goToStep(4);
+                goToStep(5);
                 renderSuccess();
 
             } catch (error) {
-                log(`❌ 失败: ${error.message}`, 'error');
+                log(`❌ 支付失败: ${error.message}`, 'error');
                 hideLoading();
-                alert('操作失败: ' + error.message);
+                alert('支付失败: ' + error.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '确认投保并支付 <span>→</span>';
+                btn.innerHTML = '确认支付 <span>→</span>';
             }
         }
 
