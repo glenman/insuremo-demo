@@ -921,6 +921,10 @@
                 const response = await fetch(url, options);
                 clearTimeout(timeoutId);
                 
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 const result = await response.json();
 
                 if (!result.Success) {
@@ -932,24 +936,22 @@
             } catch (error) {
                 clearTimeout(timeoutId);
                 
-                // 更新加载提示
-                if (retryCount < CONFIG.MAX_RETRIES) {
+                // 判断是否为可重试的错误（几乎所有错误都重试，除了明确的业务逻辑错误）
+                const shouldRetry = retryCount < CONFIG.MAX_RETRIES;
+                
+                if (shouldRetry) {
                     const nextRetry = retryCount + 1;
                     showLoading(
-                        '正在加载...', 
-                        `遇到错误，${CONFIG.RETRY_DELAY/1000}秒后进行第${nextRetry}次重试（共${CONFIG.MAX_RETRIES}次）`
+                        '正在处理...', 
+                        `⚠️ ${error.message}，${CONFIG.RETRY_DELAY/1000}秒后自动重试 (${nextRetry}/${CONFIG.MAX_RETRIES})`
                     );
-                }
-                
-                // 超时或网络错误时重试
-                if ((error.name === 'AbortError' || error.message.includes('network') || error.message.includes('fetch')) && retryCount < CONFIG.MAX_RETRIES) {
-                    log(`⚠️ ${error.message}，${CONFIG.RETRY_DELAY/1000}秒后重试...`, 'warn');
+                    log(`⚠️ ${error.message}，${CONFIG.RETRY_DELAY/1000}秒后重试 (${nextRetry}/${CONFIG.MAX_RETRIES})...`, 'warn');
                     await delay(CONFIG.RETRY_DELAY);
-                    return callAPI(endpoint, method, data, retryCount + 1);
+                    return callAPI(endpoint, method, data, nextRetry);
                 }
                 
-                log(`❌ 失败: ${error.message}`, 'error');
-                throw error;
+                log(`❌ 最终失败（已重试${CONFIG.MAX_RETRIES}次）: ${error.message}`, 'error');
+                throw new Error(`操作失败，已尝试${CONFIG.MAX_RETRIES + 1}次。最后错误: ${error.message}`);
             }
         }
 
