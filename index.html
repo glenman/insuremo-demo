@@ -656,6 +656,9 @@
 
         // 格式化保单详情
         function formatPolicyDetails(policy) {
+            // 调试：打印保单数据
+            console.log('保单详情数据：', policy);
+            
             const statusClass = {
                 'ISSUED': 'status-issued',
                 'BOUND': 'status-bound',
@@ -665,8 +668,8 @@
             // 获取产品名称
             const productName = PRODUCT_INFO[policy.ProductCode]?.name || policy.ProductCode || '-';
             
-            // 方案名称
-            const planName = policy.PlanName || '-';
+            // 方案名称（尝试多个可能的字段）
+            const planName = policy.PlanName || policy.Plan?.PlanName || policy.PlanCode || '-';
 
             return `
                 <div class="policy-details">
