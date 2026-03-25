@@ -463,7 +463,18 @@
                         return;
                     }
 
-                    const productsHTML = data.Products.map(product => {
+                    // 过滤掉不需要显示的产品
+                    const filteredProducts = data.Products.filter(product => {
+                        // 不显示 Microsite 产品
+                        return !product.ProductName.includes('Microsite');
+                    });
+
+                    if (filteredProducts.length === 0) {
+                        container.innerHTML = '<p style="text-align: center; color: #888;">暂无可用产品</p>';
+                        return;
+                    }
+
+                    const productsHTML = filteredProducts.map(product => {
                         const info = PRODUCT_INFO[product.ProductCode] || {
                             icon: '📋',
                             name: product.ProductName,
