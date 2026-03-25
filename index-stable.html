@@ -188,6 +188,20 @@
         <h1>✈️ 全球旅行险投保平台</h1>
 
         <div id="app">
+            <!-- 产品信息栏 -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 12px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.5rem;">✈️ 旅行保险</h2>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9;">产品ID: 375604942 | 代码: TRVL01</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.9rem; opacity: 0.9;">InsureMO</div>
+                        <div style="font-size: 0.85rem; opacity: 0.8;">全球旅行保障</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 步骤1：填写信息 -->
             <div id="step1">
                 <div class="status-bar" id="statusBar">
@@ -324,6 +338,7 @@
         };
 
         let appState = {
+            productId: CONFIG.PRODUCT_ID, // 确保productId在整个流程中可用
             formData: {},
             selectedPlan: null,
             calculationResult: null,
@@ -457,6 +472,7 @@
             e.preventDefault();
 
             appState.formData = {
+                ProductId: CONFIG.PRODUCT_ID, // 确保ProductId始终存在
                 EffectiveDate: document.getElementById('effectiveDate').value,
                 ExpiryDate: document.getElementById('expiryDate').value,
                 TravelType: parseInt(document.getElementById('travelType').value),
@@ -552,8 +568,11 @@
             try {
                 const payload = {
                     ...appState.formData,
+                    ProductId: appState.productId, // 明确添加ProductId
                     PlanCode: appState.selectedPlan.PlanCode
                 };
+
+                console.log('📤 计算保费请求:', payload);
 
                 const url = `${CONFIG.BASE_URL}/v1/flow/EUDemoTRVL01Calculate`;
                 const response = await fetch(url, {
@@ -575,6 +594,8 @@
                 if (!result.Success) {
                     throw new Error(result.Error?.Message || '计算失败');
                 }
+
+                console.log('✅ 保费计算成功:', result.Data);
 
                 appState.calculationResult = result.Data;
                 showStep(3);
@@ -617,6 +638,14 @@
             showLoading('处理中...');
 
             try {
+                // 确保calculationResult包含ProductId
+                const savePayload = {
+                    ...appState.calculationResult,
+                    ProductId: appState.productId // 确保ProductId存在
+                };
+
+                console.log('💾 保存提案请求:', savePayload);
+
                 // 保存提案
                 const saveUrl = `${CONFIG.BASE_URL}/v1/flow/EUDemoTRVL01SaveProposal`;
                 const saveResponse = await fetch(saveUrl, {
@@ -625,11 +654,15 @@
                         'Authorization': `Bearer ${CONFIG.AUTH_TOKEN}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify(appState.calculationResult)
+                    body: JSON.stringify(savePayload)
                 });
 
-                if (!saveResponse.ok) throw new Error('保存提案失败');
+                if (!saveResponse.ok) {
+                    const errorText = await saveResponse.text();
+                    throw new Error(`保存提案失败: ${errorText}`);
+                }
                 const saveResult = await saveResponse.json();
+                console.log('✅ 提案已保存:', saveResult.Data);
 
                 // 绑定提案
                 const bindUrl = `${CONFIG.BASE_URL}/v1/flow/EUDemoTRVL01BindProposal`;
@@ -641,6 +674,8 @@
                     },
                     body: JSON.stringify({ ProposalNo: saveResult.Data.ProposalNo })
                 });
+
+                console.log('✅ 提案已绑定');
 
                 // 支付回调
                 const paymentUrl = `${CONFIG.BASE_URL}/v1/flow/EUDemoTRVL01PaymentCallback`;
@@ -657,8 +692,12 @@
                     })
                 });
 
-                if (!paymentResponse.ok) throw new Error('支付失败');
+                if (!paymentResponse.ok) {
+                    const errorText = await paymentResponse.text();
+                    throw new Error(`支付失败: ${errorText}`);
+                }
                 const paymentResult = await paymentResponse.json();
+                console.log('✅ 支付成功:', paymentResult.Data);
 
                 hideLoading();
                 showStep(4);
@@ -666,6 +705,7 @@
 
             } catch (error) {
                 hideLoading();
+                console.error('❌ 投保失败:', error);
                 alert('投保失败: ' + error.message);
             }
         }
