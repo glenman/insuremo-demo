@@ -727,10 +727,10 @@
                 log('Step 5: 计算保费', 'info');
                 
                 const payload = {
+                    ...appState.formData,
                     ProductId: appState.productId,
                     ProductCode: 'TRVL01',
-                    PlanCode: appState.selectedPlan.PlanCode,
-                    ...appState.formData
+                    PlanCode: appState.selectedPlan.PlanCode
                 };
                 
                 log(`📤 Payload: ProductId=${payload.ProductId}, PlanCode=${payload.PlanCode}`, 'info');
