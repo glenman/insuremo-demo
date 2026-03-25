@@ -327,13 +327,24 @@ async function loadPlans() {
  * 渲染方案卡片
  */
 function renderPlans(plans) {
+    console.log('🎨 开始渲染方案，数量:', plans.length);
+    
     const container = document.getElementById('plansContainer');
+    
+    if (!container) {
+        console.error('❌ 找不到 plansContainer 元素');
+        return;
+    }
+    
     container.innerHTML = '';
 
     plans.forEach((plan, index) => {
+        console.log(`📋 渲染方案 ${index + 1}: ${plan.PlanName}`);
         const card = createPlanCard(plan, index);
         container.appendChild(card);
     });
+    
+    console.log('✅ 方案渲染完成');
 }
 
 /**
@@ -373,6 +384,8 @@ function createPlanCard(plan, index) {
  * 选择方案
  */
 function selectPlan(plan, cardElement) {
+    console.log('✅ 选择方案:', plan.PlanName);
+    
     // 移除其他选中状态
     document.querySelectorAll('.plan-card').forEach(card => {
         card.classList.remove('selected');
@@ -386,9 +399,8 @@ function selectPlan(plan, cardElement) {
 
     // 启用下一步按钮
     document.getElementById('btnStep2Next').disabled = false;
-
-    // 自动计算保费
-    calculatePremium();
+    
+    console.log('✅ 方案已选择，可以点击下一步');
 }
 
 /**
@@ -747,4 +759,12 @@ function showToast(message, type = 'error') {
 }
 
 // 绑定下一步按钮事件
-document.getElementById('btnStep2Next').addEventListener('click', calculatePremium);
+document.getElementById('btnStep2Next').addEventListener('click', async () => {
+    console.log('🖱️ 点击下一步按钮');
+    if (!appState.selectedPlan) {
+        showError('请先选择一个保障方案');
+        return;
+    }
+    
+    await calculatePremium();
+});
