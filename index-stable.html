@@ -212,6 +212,27 @@
                 <div id="cacheInfo" class="cache-info" style="display: none;"></div>
 
                 <form id="insuranceForm">
+                    <!-- 产品选择 -->
+                    <div class="form-section">
+                        <h3>选择保险产品</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>保险产品 <span class="required">*</span></label>
+                                <select id="productSelect" required style="background: #e7f3ff; border: 2px solid #007bff; font-weight: 600;">
+                                    <option value="">请选择产品</option>
+                                    <option value="375604942" selected>✈️ 旅行保险 (TRVL01) - ID: 375604942</option>
+                                </select>
+                                <div style="margin-top: 8px; padding: 10px; background: #f8f9fa; border-radius: 6px; font-size: 13px; color: #666;">
+                                    <strong>当前选择：</strong>
+                                    <span id="selectedProductName">旅行保险 (TRVL01)</span>
+                                    <br>
+                                    <strong>产品ID：</strong>
+                                    <span id="selectedProductId" style="color: #007bff; font-weight: 600;">375604942</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-section">
                         <h3>保障期间</h3>
                         <div class="form-row">
@@ -350,6 +371,24 @@
             setDefaultDates();
             document.getElementById('insuranceForm').addEventListener('submit', handleSubmit);
 
+            // 产品选择变化事件
+            document.getElementById('productSelect').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const productId = this.value;
+
+                if (productId) {
+                    document.getElementById('selectedProductName').textContent = selectedOption.text.replace(/^[^\s]+\s/, '');
+                    document.getElementById('selectedProductId').textContent = productId;
+
+                    // 更新全局ProductId
+                    appState.productId = parseInt(productId);
+                    CONFIG.PRODUCT_ID = parseInt(productId);
+
+                    console.log('✅ 已选择产品:', selectedOption.text);
+                    console.log('   ProductId:', productId);
+                }
+            });
+
             // 预加载方案数据（后台静默加载）
             preloadPlans();
         });
@@ -471,8 +510,26 @@
         async function handleSubmit(e) {
             e.preventDefault();
 
+            // 从产品选择框读取ProductId
+            const productIdSelect = document.getElementById('productSelect');
+            const selectedProductId = parseInt(productIdSelect.value);
+
+            if (!selectedProductId) {
+                alert('请选择保险产品');
+                return;
+            }
+
+            console.log('========================================');
+            console.log('🚀 开始投保流程');
+            console.log('📦 产品ID:', selectedProductId);
+            console.log('========================================');
+
+            // 更新全局ProductId
+            appState.productId = selectedProductId;
+            CONFIG.PRODUCT_ID = selectedProductId;
+
             appState.formData = {
-                ProductId: CONFIG.PRODUCT_ID, // 确保ProductId始终存在
+                ProductId: selectedProductId, // 使用选择的产品ID
                 EffectiveDate: document.getElementById('effectiveDate').value,
                 ExpiryDate: document.getElementById('expiryDate').value,
                 TravelType: parseInt(document.getElementById('travelType').value),
@@ -489,6 +546,8 @@
                     Gender: document.getElementById('gender').value
                 }]
             };
+
+            console.log('📝 表单数据:', appState.formData);
 
             await loadPlans();
         }
@@ -566,9 +625,9 @@
             btn.textContent = '⏳ 计算中...';
 
             try {
-                // 构建完整的payload
+                // 构建完整的payload，确保ProductId从appState获取
                 const payload = {
-                    ProductId: CONFIG.PRODUCT_ID, // 直接使用CONFIG，确保存在
+                    ProductId: appState.productId, // 从appState获取，确保正确
                     ProductCode: 'TRVL01', // 添加ProductCode
                     PlanCode: appState.selectedPlan.PlanCode,
                     EffectiveDate: appState.formData.EffectiveDate,
@@ -580,12 +639,19 @@
                     Travelers: appState.formData.Travelers
                 };
 
-                console.log('📤 计算保费完整请求:');
-                console.log('  ProductId:', payload.ProductId);
+                console.log('========================================');
+                console.log('📤 计算保费请求');
+                console.log('========================================');
+                console.log('  ProductId:', payload.ProductId, '(type:', typeof payload.ProductId, ')');
+                console.log('  ProductCode:', payload.ProductCode);
                 console.log('  PlanCode:', payload.PlanCode);
+                console.log('  EffectiveDate:', payload.EffectiveDate);
+                console.log('  ExpiryDate:', payload.ExpiryDate);
                 console.log('  Customer:', payload.Customer);
                 console.log('  Travelers:', payload.Travelers);
+                console.log('----------------------------------------');
                 console.log('  完整payload:', JSON.stringify(payload, null, 2));
+                console.log('========================================');
 
                 const url = `${CONFIG.BASE_URL}/v1/flow/EUDemoTRVL01Calculate`;
                 const response = await fetch(url, {
