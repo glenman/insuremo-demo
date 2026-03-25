@@ -167,7 +167,7 @@
 
         .policy-details {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr;
             gap: 15px;
         }
 
@@ -175,6 +175,8 @@
             padding: 10px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 8px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
 
         .detail-item .label {
@@ -187,6 +189,7 @@
             color: #e0e0e0;
             font-size: 1.1rem;
             font-weight: 600;
+            word-break: break-all;
         }
 
         /* 购买产品模块 */
@@ -596,7 +599,7 @@
             }
         }
 
-        // 状态映射（英文 -> 中文）
+        // 状态映射（英文/数字 -> 中文）
         function getStatusText(status) {
             const statusMap = {
                 'ISSUED': '已签发',
@@ -604,7 +607,13 @@
                 'QUOTATION': '报价中',
                 'CANCELLED': '已取消',
                 'EXPIRED': '已过期',
-                'PENDING': '待处理'
+                'PENDING': '待处理',
+                // 数字状态码
+                '1': '报价中',
+                '2': '已绑定',
+                '3': '已签发',
+                '4': '已取消',
+                '5': '已过期'
             };
             return statusMap[status] || status;
         }
@@ -679,11 +688,11 @@
                         <div class="label">保费</div>
                         <div class="value">${policy.TotalPremium || policy.Premium || 0} ${policy.Currency || 'EUR'}</div>
                     </div>
-                    <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-item">
                         <div class="label">产品名称</div>
                         <div class="value">${productName}</div>
                     </div>
-                    <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-item">
                         <div class="label">购买方案</div>
                         <div class="value">${planName}</div>
                     </div>
@@ -696,24 +705,24 @@
                         <div class="value">${formatDate(policy.ExpiryDate)}</div>
                     </div>
                     ${policy.Customer ? `
-                    <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-item">
                         <div class="label">投保人姓名</div>
                         <div class="value">${policy.Customer.Name || '-'}</div>
                     </div>
                     ${policy.Customer.IdNo ? `
-                    <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-item">
                         <div class="label">身份证号</div>
                         <div class="value">${maskInfo(policy.Customer.IdNo, 'id')}</div>
                     </div>
                     ` : ''}
                     ${policy.Customer.Mobile ? `
-                    <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-item">
                         <div class="label">联系电话</div>
                         <div class="value">${maskInfo(policy.Customer.Mobile, 'phone')}</div>
                     </div>
                     ` : ''}
                     ${policy.Customer.Email ? `
-                    <div class="detail-item" style="grid-column: 1 / -1;">
+                    <div class="detail-item">
                         <div class="label">电子邮箱</div>
                         <div class="value">${maskInfo(policy.Customer.Email, 'email')}</div>
                     </div>
