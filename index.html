@@ -357,9 +357,11 @@
             <div class="card">
                 <h2><span class="icon">🛒</span> 购买产品</h2>
                 <div id="productsContainer">
-                    <div class="loading">
-                        <div class="loading-spinner"></div>
-                        <p>正在加载产品列表...</p>
+                    <div style="text-align: center; padding: 40px;">
+                        <button class="btn" id="loadProductsBtn" onclick="loadProductsWithRetry()" style="max-width: 300px; margin: 0 auto;">
+                            🎯 选择产品
+                        </button>
+                        <p style="color: #666; margin-top: 15px; font-size: 0.9rem;">点击按钮查看可用的保险产品</p>
                     </div>
                 </div>
             </div>
@@ -432,44 +434,116 @@
             }
         }
 
-        // 加载产品列表
-        async function loadProducts() {
-            try {
-                const data = await callAPI(CONFIG.ENDPOINTS.PRODUCT_LIST);
-                const container = document.getElementById('productsContainer');
-                
-                if (!data.Products || data.Products.length === 0) {
-                    container.innerHTML = '<p style="text-align: center; color: #888;">暂无可用产品</p>';
-                    return;
-                }
-
-                const productsHTML = data.Products.map(product => {
-                    const info = PRODUCT_INFO[product.ProductCode] || {
-                        icon: '📋',
-                        name: product.ProductName,
-                        desc: '保险产品',
-                        badge: ''
-                    };
-
-                    return `
-                        <div class="product-card" onclick="buyProduct('${product.ProductCode}')">
-                            ${info.badge ? `<span class="product-badge">${info.badge}</span>` : ''}
-                            <div class="product-icon">${info.icon}</div>
-                            <div class="product-name">${info.name}</div>
-                            <div class="product-desc">${info.desc}</div>
-                            <button class="btn-buy">立即投保</button>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = `<div class="products-grid">${productsHTML}</div>`;
-            } catch (error) {
-                document.getElementById('productsContainer').innerHTML = `
-                    <div class="error-message">
-                        <p>❌ 加载产品列表失败：${error.message}</p>
-                        <button class="btn" style="margin-top: 15px;" onclick="loadProducts()">重新加载</button>
+        // 加载产品列表（带重试机制）
+        async function loadProductsWithRetry(maxRetries = 3) {
+            const container = document.getElementById('productsContainer');
+            let retryCount = 0;
+            
+            // 显示加载状态
+            const showLoading = (attempt) => {
+                container.innerHTML = `
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>正在加载产品列表...</p>
+                        ${attempt > 1 ? `<p style="font-size: 0.85rem; margin-top: 10px;">第 ${attempt} 次尝试</p>` : ''}
                     </div>
                 `;
+            };
+            
+            // 尝试加载
+            while (retryCount < maxRetries) {
+                retryCount++;
+                showLoading(retryCount);
+                
+                try {
+                    const data = await callAPIWithTimeout(CONFIG.ENDPOINTS.PRODUCT_LIST, 15000);
+                    
+                    if (!data.Products || data.Products.length === 0) {
+                        container.innerHTML = '<p style="text-align: center; color: #888;">暂无可用产品</p>';
+                        return;
+                    }
+
+                    const productsHTML = data.Products.map(product => {
+                        const info = PRODUCT_INFO[product.ProductCode] || {
+                            icon: '📋',
+                            name: product.ProductName,
+                            desc: '保险产品',
+                            badge: ''
+                        };
+
+                        return `
+                            <div class="product-card" onclick="buyProduct('${product.ProductCode}')">
+                                ${info.badge ? `<span class="product-badge">${info.badge}</span>` : ''}
+                                <div class="product-icon">${info.icon}</div>
+                                <div class="product-name">${info.name}</div>
+                                <div class="product-desc">${info.desc}</div>
+                                <button class="btn-buy">立即投保</button>
+                            </div>
+                        `;
+                    }).join('');
+
+                    container.innerHTML = `<div class="products-grid">${productsHTML}</div>`;
+                    return; // 成功加载，退出函数
+                    
+                } catch (error) {
+                    console.error(`加载失败 (尝试 ${retryCount}/${maxRetries}):`, error);
+                    
+                    if (retryCount >= maxRetries) {
+                        // 达到最大重试次数，显示错误
+                        container.innerHTML = `
+                            <div class="error-message">
+                                <p>❌ 加载产品列表失败</p>
+                                <p style="font-size: 0.9rem; margin-top: 10px; color: #888;">错误信息：${error.message}</p>
+                                <p style="font-size: 0.85rem; margin-top: 10px; color: #666;">已尝试 ${maxRetries} 次</p>
+                                <button class="btn" style="margin-top: 20px;" onclick="loadProductsWithRetry(3)">🔄 重新加载</button>
+                            </div>
+                        `;
+                    } else {
+                        // 等待1秒后重试
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
+        }
+
+        // 带超时的 API 调用
+        async function callAPIWithTimeout(endpoint, timeout = 15000) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), timeout);
+            
+            try {
+                const url = `${CONFIG.BASE_URL}${endpoint}`;
+                const options = {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${CONFIG.AUTH_TOKEN}`,
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors',
+                    signal: controller.signal
+                };
+
+                const response = await fetch(url, options);
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const result = await response.json();
+                if (!result.Success) {
+                    throw new Error(result.Error?.Message || 'API调用失败');
+                }
+                
+                return result.Data;
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                if (error.name === 'AbortError') {
+                    throw new Error('请求超时，请检查网络连接');
+                }
+                
+                throw error;
             }
         }
 
@@ -497,7 +571,7 @@
                     ? `${CONFIG.ENDPOINTS.TRVL01_POLICY}?proposalNo=${proposalNo}`
                     : `${CONFIG.ENDPOINTS.HOME01_POLICY}?proposalNo=${proposalNo}`;
 
-                const policy = await callAPI(endpoint);
+                const policy = await callAPIWithTimeout(endpoint, 15000);
 
                 // 显示结果
                 resultDiv.classList.add('show');
@@ -567,9 +641,9 @@
             }
         }
 
-        // 页面加载时初始化
+        // 页面加载时初始化（不自动加载产品）
         document.addEventListener('DOMContentLoaded', () => {
-            loadProducts();
+            // 产品列表需要用户手动点击按钮加载
         });
     </script>
 </body>
