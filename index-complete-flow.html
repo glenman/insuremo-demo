@@ -639,9 +639,16 @@
         async function submitStep1() {
             try {
                 // 收集表单数据
-                appState.productId = parseInt(document.getElementById('productSelect').value);
+                const selectedProductId = parseInt(document.getElementById('productSelect').value);
+                
+                if (!selectedProductId || isNaN(selectedProductId)) {
+                    alert('请选择一个有效的产品');
+                    return;
+                }
+
+                appState.productId = selectedProductId;
                 appState.formData = {
-                    ProductId: appState.productId,
+                    ProductId: selectedProductId,
                     EffectiveDate: document.getElementById('effectiveDate').value,
                     ExpiryDate: document.getElementById('expiryDate').value,
                     TravelType: parseInt(document.getElementById('travelType').value),
@@ -659,9 +666,9 @@
                         Gender: document.getElementById('gender').value
                     }]
                 };
-                
+
                 log('📝 表单数据已收集', 'info');
-                log(`ProductId: ${appState.productId}`, 'info');
+                log(`ProductId: ${appState.productId} (type: ${typeof appState.productId})`, 'info');
                 
                 // Step 4: 获取方案列表
                 goToStep(2);
@@ -719,21 +726,38 @@
                 alert('请选择一个保障方案');
                 return;
             }
-            
+
+            // 确保 ProductId 有效
+            if (!appState.productId || isNaN(appState.productId)) {
+                log('⚠️ ProductId无效，重新读取', 'warn');
+                appState.productId = parseInt(document.getElementById('productSelect').value);
+                if (!appState.productId || isNaN(appState.productId)) {
+                    alert('产品ID无效，请返回第1步重新选择产品');
+                    goToStep(1);
+                    return;
+                }
+            }
+
             goToStep(3);
-            
+
             try {
                 // Step 5: 计算保费
                 log('Step 5: 计算保费', 'info');
-                
+
                 const payload = {
                     ...appState.formData,
-                    ProductId: appState.productId,
+                    ProductId: parseInt(appState.productId),
                     ProductCode: 'TRVL01',
                     PlanCode: appState.selectedPlan.PlanCode
                 };
-                
-                log(`📤 Payload: ProductId=${payload.ProductId}, PlanCode=${payload.PlanCode}`, 'info');
+
+                // 最终验证
+                if (!payload.ProductId || isNaN(payload.ProductId)) {
+                    throw new Error('ProductId is invalid: ' + payload.ProductId);
+                }
+
+                log(`📤 Payload: ProductId=${payload.ProductId} (type: ${typeof payload.ProductId}), PlanCode=${payload.PlanCode}`, 'info');
+                console.log('完整Payload:', payload);
                 
                 appState.calculationResult = await callAPI('/v1/flow/EUDemoTRVL01Calculate', 'POST', payload);
                 
