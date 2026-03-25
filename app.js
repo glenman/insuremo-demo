@@ -259,6 +259,9 @@ async function loadPlans() {
 
     try {
         console.log('🚀 开始加载产品方案...');
+        console.log('📦 Product ID:', CONFIG.PRODUCT.ID);
+        console.log('🌐 Base URL:', CONFIG.BASE_URL);
+        
         const result = await api.getPlanList(CONFIG.PRODUCT.ID);
         
         console.log('✅ 方案数据:', result);
@@ -269,15 +272,18 @@ async function loadPlans() {
 
         renderPlans(result.Plans);
         showSuccess(`成功加载 ${result.Plans.length} 个保障方案`);
+        
+        console.log('✅ 方案渲染完成');
     } catch (error) {
         console.error('❌ 加载方案失败:', error);
+        console.error('Stack:', error.stack);
         
         let errorMessage = '加载方案失败';
         
         if (error.message.includes('网络连接失败')) {
             errorMessage = '无法连接到服务器，请检查网络连接';
         } else if (error.message.includes('CORS')) {
-            errorMessage = '跨域请求被阻止，请访问 <a href="test-api.html" target="_blank">API测试页面</a> 检查连接';
+            errorMessage = '跨域请求被阻止，请访问 <a href="debug.html" target="_blank">调试页面</a> 检查连接';
         } else if (error.message.includes('HTTP 401') || error.message.includes('HTTP 403')) {
             errorMessage = '认证失败，请检查 Auth Token 是否有效';
         } else {
@@ -286,18 +292,26 @@ async function loadPlans() {
         
         showError(errorMessage);
         
-        // 显示错误提示和测试链接
+        // 显示错误提示和调试链接
         const container = document.getElementById('plansContainer');
         container.innerHTML = `
-            <div style="text-align: center; padding: 3rem; color: var(--error-color);">
+            <div style="text-align: center; padding: 3rem;">
                 <div style="font-size: 3rem; margin-bottom: 1rem;">⚠️</div>
-                <h3>无法加载保障方案</h3>
+                <h3 style="color: var(--error-color);">无法加载保障方案</h3>
                 <p style="color: var(--text-secondary); margin: 1rem 0;">
                     ${error.message}
                 </p>
+                <div style="background: var(--background); padding: 1rem; border-radius: 8px; margin: 1rem 0; text-align: left; font-family: monospace; font-size: 0.875rem;">
+                    <strong>调试信息：</strong><br>
+                    • Product ID: ${CONFIG.PRODUCT.ID}<br>
+                    • API URL: ${CONFIG.BASE_URL}<br>
+                    • 错误: ${error.message}<br>
+                    <br>
+                    请打开浏览器控制台 (F12) 查看详细日志
+                </div>
                 <p style="color: var(--text-secondary); margin: 1rem 0; font-size: 0.875rem;">
-                    请访问 <a href="test-api.html" target="_blank" style="color: var(--primary-color);">API 测试页面</a> 
-                    检查 API 连接状态
+                    访问 <a href="debug.html" target="_blank" style="color: var(--primary-color);">调试页面</a> 
+                    进行详细测试
                 </p>
                 <button class="btn-primary" onclick="loadPlans()" style="margin-top: 1rem;">
                     🔄 重新加载
