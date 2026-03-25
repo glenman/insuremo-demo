@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="0; url=index-fixed.html">
+    <meta http-equiv="refresh" content="0; url=index-retry.html">
     <title>跳转中...</title>
     <style>
         body {
@@ -38,14 +38,37 @@
             font-weight: 600;
         }
         .btn:hover { background: #0056b3; }
+        .info {
+            background: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+        .info strong {
+            color: #007bff;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>✈️ 全球旅行险投保平台</h1>
-        <p>页面正在跳转到最新版本...</p>
-        <p>如果没有自动跳转，请点击下方按钮</p>
-        <a href="index-fixed.html" class="btn">前往新版平台</a>
+        <p>页面正在跳转到增强版本...</p>
+
+        <div class="info">
+            <strong>✨ 新版本特性：</strong><br>
+            ✅ 自动重试机制（最多3次）<br>
+            ✅ 智能延迟策略<br>
+            ✅ 实时进度显示<br>
+            ✅ 更友好的错误提示
+        </div>
+
+        <p style="font-size: 14px; color: #999;">
+            如果遇到加载失败，系统会自动重试
+        </p>
+
+        <a href="index-retry.html" class="btn">前往增强版平台</a>
     </div>
 </body>
 </html>
