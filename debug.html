@@ -3,85 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>调试版本 - 旅行险投保平台</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>API诊断工具</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #1a1a2e;
+            color: #e0e0e0;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 { color: #667eea; }
+        .test-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .success { border-left-color: #10b981; }
+        .error { border-left-color: #ef4444; }
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { opacity: 0.9; }
+        pre {
+            background: #000;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .config { color: #10b981; }
+        .error-msg { color: #ef4444; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header class="header">
-            <div class="logo">
-                <span class="logo-icon">✈️</span>
-                <h1>全球旅行险投保平台 (调试模式)</h1>
-            </div>
-        </header>
-
-        <main class="main-content">
-            <div class="step active">
-                <h2>🔧 调试信息</h2>
-                
-                <div id="debugLog" style="background: #1e1e1e; color: #d4d4d4; padding: 1rem; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; max-height: 400px; overflow-y: auto; margin-bottom: 2rem;">
-                    <div style="color: #4ec9b0;">=== 调试日志 ===</div>
-                </div>
-
-                <div id="testButtons" style="margin: 1rem 0;">
-                    <button onclick="testConfig()" class="btn-secondary">1️⃣ 测试配置</button>
-                    <button onclick="testProductList()" class="btn-secondary">2️⃣ 测试产品列表</button>
-                    <button onclick="testPlanList()" class="btn-secondary">3️⃣ 测试方案列表</button>
-                    <button onclick="testFullFlow()" class="btn-primary">🚀 完整流程测试</button>
-                </div>
-
-                <div id="results"></div>
-            </div>
-        </main>
+    <h1>🔍 InsureMO API 诊断工具</h1>
+    
+    <div class="test-item">
+        <h3>📋 当前配置</h3>
+        <pre class="config" id="configDisplay"></pre>
     </div>
 
-    <script src="config.js"></script>
-    <script>
-        // 调试日志函数
-        function log(message, type = 'info') {
-            const debugLog = document.getElementById('debugLog');
-            const timestamp = new Date().toLocaleTimeString();
-            const colors = {
-                info: '#d4d4d4',
-                success: '#4ec9b0',
-                error: '#f48771',
-                warning: '#dcdcaa'
-            };
-            
-            const line = document.createElement('div');
-            line.style.color = colors[type];
-            line.innerHTML = `[${timestamp}] ${message}`;
-            debugLog.appendChild(line);
-            debugLog.scrollTop = debugLog.scrollHeight;
-            
-            console.log(message);
-        }
+    <div class="test-item">
+        <h3>🌐 测试1: 获取产品列表</h3>
+        <button onclick="testProductList()">开始测试</button>
+        <pre id="test1Result">等待测试...</pre>
+    </div>
 
-        function testConfig() {
-            log('🔍 测试配置...', 'info');
-            
-            try {
-                log(`✅ BASE_URL: ${CONFIG.BASE_URL}`, 'success');
-                log(`✅ AUTH_TOKEN: ${CONFIG.AUTH_TOKEN.substring(0, 15)}...`, 'success');
-                log(`✅ PRODUCT_ID: ${CONFIG.PRODUCT.ID}`, 'success');
-                log(`✅ PRODUCT_CODE: ${CONFIG.PRODUCT.CODE}`, 'success');
-                
-                if (!CONFIG.BASE_URL || !CONFIG.AUTH_TOKEN || !CONFIG.PRODUCT.ID) {
-                    throw new Error('配置不完整');
-                }
-                
-                log('✅ 配置测试通过', 'success');
-            } catch (error) {
-                log(`❌ 配置测试失败: ${error.message}`, 'error');
-            }
-        }
+    <div class="test-item">
+        <h3>🔐 测试2: 验证API Key</h3>
+        <button onclick="testAPIKey()">验证Key</button>
+        <pre id="test2Result">等待测试...</pre>
+    </div>
+
+    <div class="test-item">
+        <h3>🌍 测试3: CORS检查</h3>
+        <button onclick="testCORS()">检查CORS</button>
+        <pre id="test3Result">等待测试...</pre>
+    </div>
+
+    <div class="test-item">
+        <h3>💻 浏览器信息</h3>
+        <pre id="browserInfo"></pre>
+    </div>
+
+    <script>
+        const CONFIG = {
+            BASE_URL: 'https://portal-gw.insuremo.com/platform/api-orchestration-test',
+            AUTH_TOKEN: 'MOATkM3zLB-wAfktz6zd7nY5Z3dgTO1N'
+        };
+
+        // 显示配置
+        document.getElementById('configDisplay').textContent = JSON.stringify({
+            BASE_URL: CONFIG.BASE_URL,
+            AUTH_TOKEN: CONFIG.AUTH_TOKEN.substring(0, 10) + '...',
+            Endpoint: '/v1/flow/EUDemoProductList'
+        }, null, 2);
+
+        // 浏览器信息
+        document.getElementById('browserInfo').textContent = JSON.stringify({
+            UserAgent: navigator.userAgent,
+            Platform: navigator.platform,
+            Language: navigator.language,
+            CookieEnabled: navigator.cookieEnabled
+        }, null, 2);
 
         async function testProductList() {
-            log('📡 测试产品列表 API...', 'info');
-            
+            const resultDiv = document.getElementById('test1Result');
+            resultDiv.textContent = '⏳ 测试中...';
+
             try {
                 const url = `${CONFIG.BASE_URL}/v1/flow/EUDemoProductList`;
-                log(`请求 URL: ${url}`, 'info');
+                const startTime = Date.now();
                 
                 const response = await fetch(url, {
                     method: 'GET',
@@ -91,104 +113,92 @@
                     },
                     mode: 'cors'
                 });
+
+                const duration = Date.now() - startTime;
+                const data = await response.json();
+
+                resultDiv.innerHTML = `<span class="success">✅ 成功 (${duration}ms)</span>\n` + 
+                    JSON.stringify({
+                        Status: response.status,
+                        Success: data.Success,
+                        ProductCount: data.Data?.Products?.length || 0,
+                        Products: data.Data?.Products?.map(p => ({
+                            Code: p.ProductCode,
+                            Name: p.ProductName
+                        }))
+                    }, null, 2);
                 
-                log(`响应状态: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    log(`错误响应: ${errorText}`, 'error');
-                    throw new Error(`HTTP ${response.status}`);
-                }
-                
-                const result = await response.json();
-                log(`✅ 成功: ${result.Success}`, 'success');
-                log(`✅ 产品数量: ${result.Data.Products.length}`, 'success');
-                
-                result.Data.Products.forEach((p, i) => {
-                    log(`  ${i+1}. ${p.ProductName} (ID: ${p.ProductId})`, 'info');
-                });
-                
+                resultDiv.parentElement.classList.add('success');
             } catch (error) {
-                log(`❌ 产品列表测试失败: ${error.message}`, 'error');
-                log(`Stack: ${error.stack}`, 'error');
+                resultDiv.innerHTML = `<span class="error-msg">❌ 失败</span>\n${error.stack || error.message}`;
+                resultDiv.parentElement.classList.add('error');
             }
         }
 
-        async function testPlanList() {
-            log('📡 测试方案列表 API...', 'info');
-            
+        async function testAPIKey() {
+            const resultDiv = document.getElementById('test2Result');
+            resultDiv.textContent = '⏳ 验证中...';
+
             try {
-                const url = `${CONFIG.BASE_URL}/v1/flow/EUDemoPlanList?productId=${CONFIG.PRODUCT.ID}`;
-                log(`请求 URL: ${url}`, 'info');
-                
-                const response = await fetch(url, {
-                    method: 'GET',
+                const response = await fetch(`${CONFIG.BASE_URL}/v1/flow/EUDemoProductList`, {
                     headers: {
-                        'Authorization': `Bearer ${CONFIG.AUTH_TOKEN}`,
-                        'Content-Type': 'application/json'
-                    },
-                    mode: 'cors'
+                        'Authorization': `Bearer ${CONFIG.AUTH_TOKEN}`
+                    }
                 });
+
+                const data = await response.json();
                 
-                log(`响应状态: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    log(`错误响应: ${errorText}`, 'error');
-                    throw new Error(`HTTP ${response.status}`);
+                if (data.Success) {
+                    resultDiv.innerHTML = `<span class="success">✅ API Key 有效</span>\n` +
+                        `Token前缀: ${CONFIG.AUTH_TOKEN.substring(0, 10)}...\n` +
+                        `验证时间: ${new Date().toISOString()}`;
+                    resultDiv.parentElement.classList.add('success');
+                } else {
+                    resultDiv.innerHTML = `<span class="error-msg">❌ API Key 无效</span>\n` +
+                        JSON.stringify(data.Error, null, 2);
+                    resultDiv.parentElement.classList.add('error');
                 }
-                
-                const result = await response.json();
-                log(`✅ 成功: ${result.Success}`, 'success');
-                log(`✅ 产品名称: ${result.Data.ProductName}`, 'success');
-                log(`✅ 方案数量: ${result.Data.Plans.length}`, 'success');
-                
-                result.Data.Plans.forEach((p, i) => {
-                    log(`  ${i+1}. ${p.PlanName} (${p.PlanCode}) - ${p.Coverages?.length || 0}个保障`, 'info');
-                });
-                
-                // 显示结果
-                const resultsDiv = document.getElementById('results');
-                resultsDiv.innerHTML = `
-                    <div class="quotation-summary">
-                        <h3>✅ 方案列表测试成功</h3>
-                        <pre style="background: #f5f5f5; padding: 1rem; border-radius: 8px; overflow-x: auto;">
-${JSON.stringify(result.Data.Plans, null, 2)}
-                        </pre>
-                    </div>
-                `;
-                
             } catch (error) {
-                log(`❌ 方案列表测试失败: ${error.message}`, 'error');
-                log(`Stack: ${error.stack}`, 'error');
+                resultDiv.innerHTML = `<span class="error-msg">❌ 验证失败</span>\n${error.message}`;
+                resultDiv.parentElement.classList.add('error');
             }
         }
 
-        async function testFullFlow() {
-            log('🚀 开始完整流程测试...', 'info');
-            
-            await testConfig();
-            await new Promise(r => setTimeout(r, 500));
-            
-            await testProductList();
-            await new Promise(r => setTimeout(r, 500));
-            
-            await testPlanList();
-            await new Promise(r => setTimeout(r, 500));
-            
-            log('✅ 完整流程测试完成', 'success');
+        async function testCORS() {
+            const resultDiv = document.getElementById('test3Result');
+            resultDiv.textContent = '⏳ 检查CORS配置...';
+
+            try {
+                // 发送OPTIONS请求检查CORS
+                const response = await fetch(`${CONFIG.BASE_URL}/v1/flow/EUDemoProductList`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'GET',
+                        'Access-Control-Request-Headers': 'Authorization, Content-Type'
+                    }
+                });
+
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': response.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials')
+                };
+
+                resultDiv.innerHTML = `<span class="success">✅ CORS配置正常</span>\n` +
+                    JSON.stringify(corsHeaders, null, 2);
+                resultDiv.parentElement.classList.add('success');
+            } catch (error) {
+                resultDiv.innerHTML = `<span class="error-msg">⚠️ CORS检查失败（可能不支持OPTIONS）</span>\n${error.message}`;
+            }
         }
 
-        // 页面加载时自动测试
+        // 自动运行测试
         window.addEventListener('load', () => {
-            log('页面加载完成', 'success');
-            log(`当前环境: ${window.location.hostname}`, 'info');
-            log(`协议: ${window.location.protocol}`, 'info');
-            
-            // 自动运行测试
             setTimeout(() => {
-                testFullFlow();
-            }, 1000);
+                testProductList();
+            }, 500);
         });
     </script>
 </body>
